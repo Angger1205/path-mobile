@@ -13,6 +13,8 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
+  final _formKey = GlobalKey<FormState>();
+
   @override
   void dispose() {
     // Like Go's `defer controller.Close()`
@@ -21,6 +23,10 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleLogin() async {
+    if (!_formKey.currentState!.validate()) {
+      return;
+    }
+
     final res = await widget._controller.login();
     if (res && mounted) {
       context.go('/beranda');
@@ -83,33 +89,58 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ],
                       ),
-                      Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        spacing: 20,
-                        children: [
-                          TextField(
-                            controller: ctrl.emailController,
-                            enabled: !ctrl.isLoading,
-                            keyboardType: TextInputType.emailAddress,
-                            decoration: const InputDecoration(
-                              labelText: "Email",
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: 20,
+                          children: [
+                            TextFormField(
+                              controller: ctrl.emailController,
+                              enabled: !ctrl.isLoading,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                labelText: "Email",
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Email tidak boleh kosong';
+                                }
+                                final emailRegex = RegExp(
+                                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                );
+                                if (!emailRegex.hasMatch(value.trim())) {
+                                  return 'Format email tidak valid';
+                                }
+                                return null;
+                              },
                             ),
-                          ),
-                          TextField(
-                            controller: ctrl.passwordController,
-                            enabled: !ctrl.isLoading,
-                            obscureText: true,
-                            decoration: const InputDecoration(
-                              labelText: "Password",
+                            TextFormField(
+                              controller: ctrl.passwordController,
+                              enabled: !ctrl.isLoading,
+                              obscureText: true,
+                              decoration: const InputDecoration(
+                                labelText: "Password",
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Password tidak boleh kosong';
+                                }
+
+                                if (value.length < 8) {
+                                  return 'Password terlalu singkat';
+                                }
+                                return null;
+                              },
                             ),
-                          ),
-                          if (ctrl.errorMessage != null)
-                            Text(
-                              ctrl.errorMessage!,
-                              style: TextStyle(color: colorScheme.error),
-                            ),
-                        ],
+                            if (ctrl.errorMessage != null)
+                              Text(
+                                ctrl.errorMessage!,
+                                style: TextStyle(color: colorScheme.error),
+                              ),
+                          ],
+                        ),
                       ),
                       ElevatedButton(
                         onPressed: ctrl.isLoading ? null : _handleLogin,
