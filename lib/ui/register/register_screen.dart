@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path_mobile/ui/core/app_theme.dart';
 import 'package:path_mobile/ui/register/register_controller.dart';
 
 class RegisterScreen extends StatefulWidget {
   final RegisterController _controller;
 
-  const new({super.key, required this._controller});
+  const RegisterScreen({super.key, required this._controller});
 
   @override
   State<RegisterScreen> createState() => _RegisterScreenState();
@@ -14,9 +15,20 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  void _handleRegister() {
+  @override
+  void dispose() {
+    widget._controller.dispose();
+    super.dispose();
+  }
+
+  Future<void> _handleRegister() async {
     if (!_formKey.currentState!.validate()) {
       return;
+    }
+
+    final res = await widget._controller.register();
+    if (res && mounted) {
+      context.go('/beranda');
     }
   }
 
@@ -33,99 +45,132 @@ class _RegisterScreenState extends State<RegisterScreen> {
           width: double.infinity,
           height: MediaQuery.of(context).size.height * 0.7,
           decoration: BoxDecoration(
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12)],
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12)],
             color: theme.cardColor,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(64)),
-            border: Border.symmetric(
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(64)),
+            border: const Border.symmetric(
               horizontal: BorderSide(color: AppColors.secondaryText, width: 2),
             ),
           ),
-          padding: EdgeInsets.symmetric(horizontal: 50),
+          padding: const EdgeInsets.symmetric(horizontal: 50),
           child: Center(
             child: ConstrainedBox(
-              constraints: BoxConstraints(maxWidth: 500),
-              child: Column(
-                spacing: 32,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Row(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: ListenableBuilder(
+                listenable: widget._controller,
+                builder: (context, _) {
+                  final ctrl = widget._controller;
+
+                  return Column(
+                    spacing: 32,
                     mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      BackButton(),
-                      Expanded(
-                        child: Text(
-                          "New Account",
-                          style: TextStyle(
-                            fontSize: 32,
-                            fontWeight: FontWeight.bold,
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const BackButton(color: AppColors.text),
+                          const Expanded(
+                            child: Text(
+                              "New Account",
+                              style: TextStyle(
+                                fontSize: 32,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.text,
+                              ),
+                            ),
                           ),
+                          CircleAvatar(
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
+                            child: const Icon(Icons.person),
+                          ),
+                        ],
+                      ),
+                      Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          spacing: 20,
+                          children: [
+                            TextFormField(
+                              controller: ctrl.usernameController,
+                              enabled: !ctrl.isLoading,
+                              decoration: const InputDecoration(
+                                labelText: "Username",
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Username tidak boleh kosong';
+                                }
+                                return null;
+                              },
+                            ),
+                            TextFormField(
+                              controller: ctrl.emailController,
+                              enabled: !ctrl.isLoading,
+                              keyboardType: TextInputType.emailAddress,
+                              decoration: const InputDecoration(
+                                labelText: "Email",
+                              ),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Email tidak boleh kosong';
+                                }
+                                final emailRegex = RegExp(
+                                  r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
+                                );
+                                if (!emailRegex.hasMatch(value.trim())) {
+                                  return 'Format email tidak valid';
+                                }
+                                return null;
+                              },
+                            ),
+                            TextFormField(
+                              controller: ctrl.passwordController,
+                              enabled: !ctrl.isLoading,
+                              obscureText: true,
+                              decoration: const InputDecoration(
+                                labelText: "Password",
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Password tidak boleh kosong';
+                                }
+                                if (value.length < 8) {
+                                  return 'Password terlalu singkat';
+                                }
+                                return null;
+                              },
+                            ),
+                            if (ctrl.errorMessage != null)
+                              Text(
+                                ctrl.errorMessage!,
+                                style: TextStyle(color: colorScheme.error),
+                              ),
+                          ],
                         ),
                       ),
-                      CircleAvatar(
-                        backgroundColor: colorScheme.primary,
-                        foregroundColor: colorScheme.onPrimary,
-                        child: Icon(Icons.person),
+                      ElevatedButton(
+                        onPressed: ctrl.isLoading ? null : _handleRegister,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.all(20),
+                        ),
+                        child: ctrl.isLoading
+                            ? SizedBox(
+                                height: 20,
+                                width: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: colorScheme.onPrimary,
+                                ),
+                              )
+                            : const Text('Register'),
                       ),
                     ],
-                  ),
-                  Form(
-                    key: _formKey,
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      spacing: 20,
-                      children: [
-                        TextFormField(
-                          decoration: const InputDecoration(
-                            labelText: "Username",
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Username tidak boleh kosong';
-                            }
-                            return null;
-                          },
-                        ),
-                        TextFormField(
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(labelText: "Email"),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Email tidak boleh kosong';
-                            }
-                            final emailRegex = RegExp(
-                              r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
-                            );
-                            if (!emailRegex.hasMatch(value.trim())) {
-                              return 'Format email tidak valid';
-                            }
-                            return null;
-                          },
-                        ),
-                        TextFormField(
-                          obscureText: true,
-                          decoration: const InputDecoration(
-                            labelText: "Password",
-                          ),
-                          validator: (value) {
-                            if (value == null || value.isEmpty) {
-                              return 'Password tidak boleh kosong';
-                            }
-                            return null;
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  ElevatedButton(
-                    onPressed: _handleRegister,
-                    style: ElevatedButton.styleFrom(
-                      padding: EdgeInsets.all(20),
-                    ),
-                    child: Text('Register'),
-                  ),
-                ],
+                  );
+                },
               ),
             ),
           ),

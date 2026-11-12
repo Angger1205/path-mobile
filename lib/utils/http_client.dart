@@ -17,6 +17,8 @@ class HttpClient extends http.BaseClient {
 
   Uri uri(String path) => Uri.parse('$baseUrl$path');
 
+  final Map<String, String> JSON = {'content-type': 'application/json'};
+
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {
     if (_token != null && _token!.isNotEmpty) {
