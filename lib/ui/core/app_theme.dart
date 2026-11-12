@@ -151,6 +151,22 @@ abstract final class AppTheme {
           foregroundColor: Colors.white,
         ),
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.color1,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.color2.withValues(alpha: 0.6),
+          disabledForegroundColor: Colors.white,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.color1,
+          side: BorderSide(
+            color: AppColors.secondaryText.withValues(alpha: 0.4),
+          ),
+        ),
+      ),
       extensions: const <ThemeExtension<dynamic>>[
         AppCustomColors.light,
       ],

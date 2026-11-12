@@ -3,8 +3,9 @@ import 'package:path_mobile/data/login/login_repository.dart';
 
 class LoginController extends ChangeNotifier {
   final LoginRepository _repo;
+  final Future<void> Function()? onAuthenticated;
 
-  LoginController(this._repo);
+  LoginController(this._repo, {this.onAuthenticated});
 
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
@@ -16,21 +17,23 @@ class LoginController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
 
   Future<bool> login() async {
-    _isLoading = true;
-    _errorMessage = null;
-    notifyListeners();
+    final email = emailController.text.trim();
+    final password = passwordController.text;
 
-    if (emailController.text.isEmpty || passwordController.text.isEmpty) {
-      _isLoading = false;
-      _errorMessage = 'email atau password tidak boleh kosong';
+    if (email.isEmpty || password.isEmpty) {
+      _errorMessage = 'Email dan password wajib diisi';
       notifyListeners();
       return false;
     }
 
-    final err = await _repo.login(
-      emailController.text,
-      passwordController.text,
-    );
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    final err = await _repo.login(email, password);
+    if (err == null && onAuthenticated != null) {
+      await onAuthenticated!();
+    }
 
     _isLoading = false;
     _errorMessage = err;

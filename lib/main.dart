@@ -7,11 +7,13 @@ void main() {
 }
 
 class PathMobile extends StatelessWidget {
-  const new({super.key});
+  const PathMobile({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      title: 'PATH Mobile',
+      debugShowCheckedModeBanner: false,
       theme: AppTheme.lightTheme,
       routerConfig: router,
     );

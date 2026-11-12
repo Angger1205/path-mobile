@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_mobile/ui/core/app_assets.dart';
+import 'package:path_mobile/ui/core/app_theme.dart';
 
 class LayoutScreen extends StatelessWidget {
-  const new({super.key, required this.child});
+  const LayoutScreen({super.key, required this.child});
 
   final Widget child;
 
@@ -22,27 +24,38 @@ class LayoutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selectedIndex = _calculateSelectedIndex(context);
+
     return Scaffold(
+      backgroundColor: AppColors.card,
       body: child,
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _calculateSelectedIndex(context),
-        onTap: (index) => context.go(_routes[index]),
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-        items: const [
-          BottomNavigationBarItem(label: 'Beranda', icon: Icon(Icons.home)),
-          BottomNavigationBarItem(
-            label: 'Pengajar',
-            icon: Icon(Icons.engineering),
-          ),
-          BottomNavigationBarItem(label: 'Kelas', icon: Icon(Icons.book)),
-          BottomNavigationBarItem(
-            label: 'Kalender',
-            icon: Icon(Icons.calendar_month),
-          ),
-          BottomNavigationBarItem(label: 'Profil', icon: Icon(Icons.person)),
-        ],
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: selectedIndex,
+        onDestinationSelected: (index) => context.go(_routes[index]),
+        backgroundColor: AppColors.card,
+        surfaceTintColor: Colors.transparent,
+        indicatorColor: Colors.transparent,
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
+        destinations: AppAssets.navItems
+            .map(
+              (item) => NavigationDestination(
+                icon: _navIcon(item.inactive),
+                selectedIcon: _navIcon(item.active),
+                label: item.label,
+              ),
+            )
+            .toList(),
       ),
+    );
+  }
+
+  Widget _navIcon(String path) {
+    return Image.asset(
+      path,
+      width: 26,
+      height: 26,
+      errorBuilder: (_, _, _) =>
+          const Icon(Icons.image_not_supported_outlined),
     );
   }
 }
