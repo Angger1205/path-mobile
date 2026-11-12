@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_mobile/ui/core/app_theme.dart';
 import 'package:path_mobile/ui/login/login_controller.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -28,6 +29,9 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: Align(
@@ -35,12 +39,12 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Container(
           width: double.infinity,
           height: MediaQuery.of(context).size.height * 0.7,
-          decoration: const BoxDecoration(
-            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 12)],
-            color: Colors.white,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(64)),
-            border: Border.symmetric(
-              horizontal: BorderSide(color: Colors.grey, width: 2),
+          decoration: BoxDecoration(
+            boxShadow: const [BoxShadow(color: Colors.black12, blurRadius: 12)],
+            color: theme.cardColor,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(64)),
+            border: const Border.symmetric(
+              horizontal: BorderSide(color: AppColors.secondaryText, width: 2),
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 50),
@@ -58,23 +62,24 @@ class _LoginScreenState extends State<LoginScreen> {
                     mainAxisAlignment: MainAxisAlignment.center,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      const Row(
+                      Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          BackButton(),
-                          Expanded(
+                          const BackButton(color: AppColors.text),
+                          const Expanded(
                             child: Text(
                               "Login",
                               style: TextStyle(
                                 fontSize: 32,
                                 fontWeight: FontWeight.bold,
+                                color: AppColors.text,
                               ),
                             ),
                           ),
                           CircleAvatar(
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            child: Icon(Icons.person),
+                            backgroundColor: colorScheme.primary,
+                            foregroundColor: colorScheme.onPrimary,
+                            child: const Icon(Icons.person),
                           ),
                         ],
                       ),
@@ -102,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (ctrl.errorMessage != null)
                             Text(
                               ctrl.errorMessage!,
-                              style: const TextStyle(color: Colors.red),
+                              style: TextStyle(color: colorScheme.error),
                             ),
                         ],
                       ),
@@ -110,16 +115,14 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: ctrl.isLoading ? null : _handleLogin,
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.all(20),
-                          foregroundColor: Colors.white,
-                          backgroundColor: Colors.blue,
                         ),
                         child: ctrl.isLoading
-                            ? const SizedBox(
+                            ? SizedBox(
                                 height: 20,
                                 width: 20,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
-                                  color: Colors.white,
+                                  color: colorScheme.onPrimary,
                                 ),
                               )
                             : const Text('Login'),
