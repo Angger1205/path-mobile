@@ -23,7 +23,6 @@ import 'package:path_mobile/ui/kelas/kelas_controller.dart';
 import 'package:path_mobile/ui/kelas/kelas_screen.dart';
 
 import 'package:path_mobile/data/login/login_repository.dart';
-import 'package:path_mobile/ui/login/forgot_password_screen.dart';
 import 'package:path_mobile/ui/login/login_controller.dart';
 import 'package:path_mobile/ui/login/login_screen.dart';
 
@@ -34,42 +33,11 @@ import 'package:path_mobile/ui/profil/profil_screen.dart';
 final _httpClient = HttpClient();
 
 final _loginRepo = LoginRepository(_httpClient);
-final _registerRepo = RegisterRepository(_httpClient);
 final _profilRepo = ProfilRepository(_httpClient);
-final _pengajarRepo = PengajarRepository(
-  _httpClient,
-  currentUserId: () => _profilRepo.id,
-);
-final _kelasRepo = KelasRepository(
-  _httpClient,
-  currentUserId: () => _profilRepo.id,
-);
-final _kalenderRepo = KalenderRepository(
-  _httpClient,
-  kelasRepo: _kelasRepo,
-  pengajarRepo: _pengajarRepo,
-);
-
-final _kelasController = KelasController(_kelasRepo);
-final _pengajarController = PengajarController(_pengajarRepo);
-final _kalenderController = KalenderController(_kalenderRepo);
-final _profilController = ProfilController(
-  _profilRepo,
-  onLogout: () {
-    _kelasRepo.clear();
-    _pengajarRepo.clear();
-    _kalenderRepo.clear();
-  },
-);
-
-Future<void> _loadInitialSessionData() async {
-  await _profilRepo.fetchProfile();
-  await Future.wait([
-    _kelasRepo.fetchJoinedClasses(),
-    _pengajarRepo.fetchTeachingClasses(),
-    _kalenderRepo.fetchKalender(),
-  ]);
-}
+final _kelasRepo = KelasRepository(_httpClient);
+final _kalenderRepo = KalenderRepository(_httpClient);
+final _pengajarRepo = PengajarRepository(_httpClient);
+final _registerRepo = RegisterRepository(_httpClient);
 
 final router = GoRouter(
   routes: [
@@ -78,30 +46,27 @@ final router = GoRouter(
       routes: [
         GoRoute(
           path: '/beranda',
-          builder: (context, state) => DashboardScreen(
-            controller: _kelasController,
-            pengajarController: _pengajarController,
-          ),
+          builder: (context, state) => const DashboardScreen(),
         ),
         GoRoute(
           path: '/pengajar',
           builder: (context, state) =>
-              PengajarScreen(controller: _pengajarController),
+              PengajarScreen(controller: PengajarController(_pengajarRepo)),
         ),
         GoRoute(
           path: '/kelas',
           builder: (context, state) =>
-              KelasScreen(controller: _kelasController),
+              KelasScreen(controller: KelasController(_kelasRepo)),
         ),
         GoRoute(
           path: '/kalender',
           builder: (context, state) =>
-              KalenderScreen(controller: _kalenderController),
+              KalenderScreen(controller: KalenderController(_kalenderRepo)),
         ),
         GoRoute(
           path: '/profil',
           builder: (context, state) =>
-              ProfilScreen(controller: _profilController),
+              ProfilScreen(controller: ProfilController(_profilRepo)),
         ),
       ],
     ),
@@ -113,30 +78,15 @@ final router = GoRouter(
           path: 'login',
           pageBuilder: (context, state) => slideUpPage(
             state,
-            LoginScreen(
-              controller: LoginController(
-                _loginRepo,
-                onAuthenticated: _loadInitialSessionData,
-              ),
-            ),
+            LoginScreen(controller: LoginController(_loginRepo)),
           ),
         ),
         GoRoute(
           path: 'register',
           pageBuilder: (context, state) => slideUpPage(
             state,
-            RegisterScreen(
-              controller: RegisterController(
-                _registerRepo,
-                onAuthenticated: _loadInitialSessionData,
-              ),
-            ),
+            RegisterScreen(controller: RegisterController(_registerRepo)),
           ),
-        ),
-        GoRoute(
-          path: 'forgot-password',
-          pageBuilder: (context, state) =>
-              slideUpPage(state, const ForgotPasswordScreen()),
         ),
       ],
     ),

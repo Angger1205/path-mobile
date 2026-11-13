@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:path_mobile/ui/core/app_theme.dart';
 
 class PathLogo extends StatelessWidget {
   final double width;
@@ -12,9 +11,9 @@ class PathLogo extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
+      padding: const EdgeInsets.all(8),
       decoration: BoxDecoration(
-        color: AppColors.card,
+        color: Colors.white,
         borderRadius: BorderRadius.circular(22),
         boxShadow: const [
           BoxShadow(
@@ -24,26 +23,7 @@ class PathLogo extends StatelessWidget {
           ),
         ],
       ),
-      child: const Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            Icons.school_rounded,
-            size: 52,
-            color: AppColors.color1,
-          ),
-          SizedBox(height: 4),
-          Text(
-            'PATH',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: AppColors.color1,
-              letterSpacing: 2.5,
-            ),
-          ),
-        ],
-      ),
+      child: Image.asset('assets/images/path_logo.png', fit: BoxFit.contain),
     );
   }
 }
