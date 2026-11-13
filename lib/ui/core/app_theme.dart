@@ -172,4 +172,24 @@ abstract final class AppTheme {
       ],
     );
   }
+
+  static final ButtonStyle softButton = ElevatedButton.styleFrom(
+    backgroundColor: AppColors.card,
+    foregroundColor: AppColors.text,
+    disabledBackgroundColor: AppColors.background,
+    disabledForegroundColor: AppColors.secondaryText.withValues(alpha: 0.5),
+    elevation: 3,
+    shape: const StadiumBorder(),
+    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+  );
+
+  static final ButtonStyle softCompactButton = ElevatedButton.styleFrom(
+    backgroundColor: AppColors.card,
+    foregroundColor: AppColors.text,
+    disabledBackgroundColor: AppColors.background,
+    disabledForegroundColor: AppColors.secondaryText.withValues(alpha: 0.5),
+    elevation: 3,
+    shape: const StadiumBorder(),
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+  );
 }

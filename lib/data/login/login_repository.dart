@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:path_mobile/data/api_helper.dart';
+
 import 'package:path_mobile/utils/http_client.dart';
 
 class LoginRepository {
@@ -8,32 +8,35 @@ class LoginRepository {
 
   LoginRepository(this._client);
 
-  /// Returns an error message on failure, or `null` on success.
+  /// Returns an error message on failure, or `null` on success (like Go's `error`).
   Future<String?> login(String email, String password) async {
+    final body = {'email': email, 'password': password};
+
     try {
       final response = await _client
           .post(
             _client.uri('/login'),
-            body: jsonEncode({'email': email, 'password': password}),
-            headers: _client.json,
+            body: jsonEncode(body),
+            headers: {'Content-Type': 'application/json'},
           )
           .timeout(const Duration(seconds: 10));
 
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+
       if (response.statusCode != 200) {
-        return parseApiError(response, 'Gagal masuk');
+        return data['message'] as String? ?? 'Login failed';
       }
 
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
       final token = data['token'] as String?;
       if (token == null || token.isEmpty) {
-        return 'Token tidak ditemukan';
+        return 'Token not found';
       }
       _client.setToken(token);
       return null;
     } on TimeoutException {
-      return 'Koneksi ke server habis waktu. Pastikan backend sedang berjalan.';
+      return 'Request timed out. Please try again.';
     } catch (e) {
-      return 'Tidak dapat terhubung ke server: $e';
+      return 'Network error: $e';
     }
   }
 }

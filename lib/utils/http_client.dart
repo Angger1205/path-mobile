@@ -1,15 +1,13 @@
 import 'package:http/http.dart' as http;
 
 class HttpClient extends http.BaseClient {
-  final String baseUrl = const String.fromEnvironment(
-    'API_URL',
-    defaultValue: 'https://api.pathclass.app',
-  );
+  final String baseUrl = 'https://api.pathclass.app';
   final http.Client _inner;
   String? _token;
 
-  HttpClient({http.Client? client, this._token})
-    : _inner = client ?? http.Client();
+  HttpClient({http.Client? client, String? token})
+    : _inner = client ?? http.Client(),
+      _token = token;
 
   String? get token => _token;
 
@@ -19,7 +17,7 @@ class HttpClient extends http.BaseClient {
 
   Uri uri(String path) => Uri.parse('$baseUrl$path');
 
-  final Map<String, String> json = {'content-type': 'application/json'};
+  final Map<String, String> JSON = {'content-type': 'application/json'};
 
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) {

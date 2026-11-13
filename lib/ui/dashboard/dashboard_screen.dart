@@ -1,30 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path_mobile/ui/core/app_routes.dart';
 import 'package:path_mobile/ui/core/app_theme.dart';
+import 'package:path_mobile/ui/core/class_card.dart';
 import 'package:path_mobile/ui/core/page_frame.dart';
-import 'package:path_mobile/ui/dashboard/widgets/class_card.dart';
-import 'package:path_mobile/ui/kelas/kelas_controller.dart';
-import 'package:path_mobile/ui/kelas/widgets/registered_classes_view.dart';
-import 'package:path_mobile/ui/pengajar/pengajar_controller.dart';
-import 'package:path_mobile/ui/pengajar/pengajar_detail_screen.dart';
+import 'package:path_mobile/ui/kelas/kelas_screen.dart';
+import 'package:path_mobile/ui/pengajar/pengajar_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  final KelasController controller;
-  final PengajarController? pengajarController;
-
-  const DashboardScreen({
-    super.key,
-    required this.controller,
-    this.pengajarController,
-  });
+  const DashboardScreen({super.key});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  int _selectedTab = 0; // 0 = Terdaftar, 1 = Pengajar
+  int _selectedTab = 0;
+
+  static const List<ClassItem> _teachingClasses = [
+    ClassItem(
+      title: 'Pemrograman Web',
+      grade: 'Kelas XII',
+      coverIndex: 1,
+      code: 'WEB204',
+    ),
+  ];
 
   @override
   Widget build(BuildContext context) {
@@ -32,8 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       breadcrumb: const ['Beranda'],
       child: _selectedTab == 1
           ? _buildTeachingTab()
-          : RegisteredClassesView(
-              controller: widget.controller,
+          : RegisteredClassesSection(
               breadcrumbRoot: 'Beranda',
               emptyMessage:
                   'Anda belum memiliki kelas atau bergabung ke kelas manapun',
@@ -45,68 +43,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildTeachingTab() {
-    final pengajarCtrl = widget.pengajarController;
-    if (pengajarCtrl == null) {
-      return Column(
-        children: [
-          _buildHeader(),
-          const Expanded(
-            child: Center(
-              child: Text(
-                'Belum ada kelas yang Anda ajar',
-                style: TextStyle(color: AppColors.secondaryText),
-              ),
-            ),
-          ),
-        ],
-      );
-    }
-
-    return ListenableBuilder(
-      listenable: pengajarCtrl,
-      builder: (context, _) {
-        final classes = pengajarCtrl.teachingClasses;
-        return Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: classes.isEmpty
-                  ? const Center(
-                      child: Text(
-                        'Belum ada kelas yang Anda ajar',
-                        style: TextStyle(color: AppColors.secondaryText),
+    return Column(
+      children: [
+        _buildHeader(),
+        Expanded(
+          child: _teachingClasses.isEmpty
+              ? const Center(
+                  child: Text(
+                    'Belum ada kelas yang Anda ajar',
+                    style: TextStyle(color: AppColors.secondaryText),
+                  ),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    mainAxisExtent: 152,
+                  ),
+                  itemCount: _teachingClasses.length,
+                  itemBuilder: (context, i) {
+                    final item = _teachingClasses[i];
+                    return ClassCard(
+                      data: item,
+                      onTap: () => openPage(
+                        context,
+                        breadcrumb: ['Beranda', item.title],
+                        page: PengajarDetailScreen(classData: item),
+                        routeName: 'pengajar-detail',
                       ),
-                    )
-                  : GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 2,
-                            crossAxisSpacing: 12,
-                            mainAxisSpacing: 12,
-                            mainAxisExtent: 152,
-                          ),
-                      itemCount: classes.length,
-                      itemBuilder: (context, i) {
-                        final item = classes[i];
-                        return ClassCard(
-                          data: item,
-                          onTap: () => openPage(
-                            context,
-                            breadcrumb: ['Beranda', item.title],
-                            page: PengajarDetailScreen(
-                              controller: pengajarCtrl,
-                              classData: item,
-                            ),
-                            routeName: AppRoutes.pengajarDetail,
-                          ),
-                        );
-                      },
-                    ),
-            ),
-          ],
-        );
-      },
+                    );
+                  },
+                ),
+        ),
+      ],
     );
   }
 

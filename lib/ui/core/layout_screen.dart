@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:path_mobile/ui/core/app_assets.dart';
-import 'package:path_mobile/ui/core/app_theme.dart';
 
 class LayoutScreen extends StatelessWidget {
-  const LayoutScreen({super.key, required this.child});
+  const new({super.key, required this.child});
 
   final Widget child;
 
@@ -24,31 +22,26 @@ class LayoutScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final selectedIndex = _calculateSelectedIndex(context);
-
     return Scaffold(
-      backgroundColor: AppColors.card,
       body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (index) => context.go(_routes[index]),
-        backgroundColor: AppColors.card,
-        surfaceTintColor: Colors.transparent,
-        indicatorColor: Colors.transparent,
-        labelBehavior: NavigationDestinationLabelBehavior.alwaysHide,
-        destinations: AppAssets.navItems
-            .map(
-              (item) => NavigationDestination(
-                icon: Icon(item.icon, size: 26, color: AppColors.text),
-                selectedIcon: Icon(
-                  item.activeIcon,
-                  size: 26,
-                  color: AppColors.text,
-                ),
-                label: item.label,
-              ),
-            )
-            .toList(),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _calculateSelectedIndex(context),
+        onTap: (index) => context.go(_routes[index]),
+        selectedItemColor: Colors.blue,
+        unselectedItemColor: Colors.grey,
+        items: const [
+          BottomNavigationBarItem(label: 'Beranda', icon: Icon(Icons.home)),
+          BottomNavigationBarItem(
+            label: 'Pengajar',
+            icon: Icon(Icons.engineering),
+          ),
+          BottomNavigationBarItem(label: 'Kelas', icon: Icon(Icons.book)),
+          BottomNavigationBarItem(
+            label: 'Kalender',
+            icon: Icon(Icons.calendar_month),
+          ),
+          BottomNavigationBarItem(label: 'Profil', icon: Icon(Icons.person)),
+        ],
       ),
     );
   }

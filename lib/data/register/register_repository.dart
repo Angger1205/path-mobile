@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-import 'package:path_mobile/data/api_helper.dart';
+
 import 'package:path_mobile/utils/http_client.dart';
 
 class RegisterRepository {
@@ -8,40 +8,29 @@ class RegisterRepository {
 
   RegisterRepository(this._client);
 
-  /// Returns an error message on failure, or `null` on success.
-  Future<String?> register({
-    required String username,
-    required String email,
-    required String password,
-  }) async {
+  Future<String?> register(String nama, String email, String password) async {
+    final body = {'nama': nama, 'email': email, 'password': password};
+
     try {
       final response = await _client
           .post(
             _client.uri('/register'),
-            body: jsonEncode({
-              'username': username,
-              'email': email,
-              'password': password,
-            }),
-            headers: _client.json,
+            body: jsonEncode(body),
+            headers: _client.JSON,
           )
           .timeout(const Duration(seconds: 10));
+      final data = jsonDecode(response.body);
 
-      if (response.statusCode != 200 && response.statusCode != 201) {
-        return parseApiError(response, 'Gagal mendaftarkan akun');
-      }
-
-      final data = jsonDecode(response.body) as Map<String, dynamic>;
       final token = data['token'] as String?;
       if (token == null || token.isEmpty) {
-        return 'Token tidak ditemukan';
+        return 'Failed to register. Please try again.';
       }
       _client.setToken(token);
       return null;
     } on TimeoutException {
-      return 'Koneksi ke server habis waktu. Pastikan backend sedang berjalan.';
+      return 'Request timed out. Please try again.';
     } catch (e) {
-      return 'Tidak dapat terhubung ke server: $e';
+      return e.toString();
     }
   }
 }
