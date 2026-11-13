@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:path_mobile/ui/core/app_theme.dart';
+import 'package:path_mobile/ui/core/confirm_dialog.dart';
 import 'package:path_mobile/ui/core/page_frame.dart';
 import 'package:path_mobile/ui/profil/edit_profil_screen.dart';
 import 'package:path_mobile/ui/profil/lupa_password_screen.dart';
@@ -27,7 +29,7 @@ class ProfilScreen extends StatelessWidget {
         builder: (context, _) {
           return Column(
             children: [
-              const ProfilHeader(),
+              ProfilHeader(onLogout: () => _handleLogout(context)),
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
@@ -91,8 +93,8 @@ class ProfilScreen extends StatelessWidget {
                         ElevatedButton(
                           onPressed: () => openPage(
                             context,
-                            breadcrumb: ['Profil', 'Lupa Password'],
-                            page: const LupaPasswordScreen(),
+                            breadcrumb: ['Profil', 'Ganti Password'],
+                            page: LupaPasswordScreen(controller: controller),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: AppColors.card,
@@ -117,6 +119,18 @@ class ProfilScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    final yes = await showConfirmDialog(
+      context,
+      title: 'Keluar',
+      message: 'Apakah Anda yakin ingin keluar dari akun?',
+    );
+    if (!yes || !context.mounted) return;
+
+    controller.logout();
+    context.go('/login');
   }
 }
 

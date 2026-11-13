@@ -52,7 +52,7 @@ class _BuatMateriScreenState extends State<BuatMateriScreen> {
   }
 
   Future<void> _save() async {
-    await widget.controller.addMateri(
+    final err = await widget.controller.addMateri(
       widget.classData,
       MateriModel(
         title: _titleController.text.trim(),
@@ -63,6 +63,12 @@ class _BuatMateriScreenState extends State<BuatMateriScreen> {
       ),
     );
     if (!mounted) return;
+    if (err != null) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(err)));
+      return;
+    }
     Navigator.of(context).popUntil(
       ModalRoute.withName(AppRoutes.pengajarDetail),
     );

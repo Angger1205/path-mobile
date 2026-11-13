@@ -4,7 +4,7 @@ import 'package:path_mobile/ui/kelas/widgets/file_card.dart';
 import 'package:path_mobile/utils/link_helper.dart';
 
 /// Kartu satu lampiran. Ikon di kanan menyesuaikan jenisnya (file atau link).
-/// Link bisa ditekan untuk dibuka di browser.
+/// Bisa ditekan untuk dibuka di browser atau aplikasi eksternal sesuai format file.
 class LampiranCard extends StatelessWidget {
   final LampiranModel data;
   final VoidCallback? onTap;
@@ -19,7 +19,7 @@ class LampiranCard extends StatelessWidget {
       fileName: data.name,
       fileType: data.detail,
       icon: isLink ? Icons.link : Icons.description_outlined,
-      onTap: onTap ?? (isLink ? () => openLink(context, data.detail) : null),
+      onTap: onTap ?? () => openAttachment(context, data),
     );
   }
 }

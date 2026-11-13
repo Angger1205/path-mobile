@@ -12,7 +12,7 @@ class PathLogo extends StatelessWidget {
     return Container(
       width: width,
       height: height,
-      padding: const EdgeInsets.all(8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(22),
@@ -24,7 +24,26 @@ class PathLogo extends StatelessWidget {
           ),
         ],
       ),
-      child: Image.asset('assets/images/path_logo.png', fit: BoxFit.contain),
+      child: const Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.school_rounded,
+            size: 52,
+            color: AppColors.color1,
+          ),
+          SizedBox(height: 4),
+          Text(
+            'PATH',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              color: AppColors.color1,
+              letterSpacing: 2.5,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

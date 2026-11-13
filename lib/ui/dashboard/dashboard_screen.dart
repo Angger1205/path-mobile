@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:path_mobile/ui/core/app_routes.dart';
 import 'package:path_mobile/ui/core/app_theme.dart';
 import 'package:path_mobile/ui/core/page_frame.dart';
+import 'package:path_mobile/ui/dashboard/widgets/class_card.dart';
 import 'package:path_mobile/ui/kelas/kelas_controller.dart';
 import 'package:path_mobile/ui/kelas/widgets/registered_classes_view.dart';
+import 'package:path_mobile/ui/pengajar/pengajar_controller.dart';
+import 'package:path_mobile/ui/pengajar/pengajar_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final KelasController controller;
+  final PengajarController? pengajarController;
 
-  const DashboardScreen({super.key, required this.controller});
+  const DashboardScreen({
+    super.key,
+    required this.controller,
+    this.pengajarController,
+  });
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -22,19 +31,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return PageFrame(
       breadcrumb: const ['Beranda'],
       child: _selectedTab == 1
-          ? Column(
-              children: [
-                _buildHeader(),
-                const Expanded(
-                  child: Center(
-                    child: Text(
-                      'Belum ada kelas yang Anda ajar',
-                      style: TextStyle(color: AppColors.secondaryText),
-                    ),
-                  ),
-                ),
-              ],
-            )
+          ? _buildTeachingTab()
           : RegisteredClassesView(
               controller: widget.controller,
               breadcrumbRoot: 'Beranda',
@@ -47,7 +44,72 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Kepala Beranda: judul (berganti sesuai tab) + dua tombol tab
+  Widget _buildTeachingTab() {
+    final pengajarCtrl = widget.pengajarController;
+    if (pengajarCtrl == null) {
+      return Column(
+        children: [
+          _buildHeader(),
+          const Expanded(
+            child: Center(
+              child: Text(
+                'Belum ada kelas yang Anda ajar',
+                style: TextStyle(color: AppColors.secondaryText),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return ListenableBuilder(
+      listenable: pengajarCtrl,
+      builder: (context, _) {
+        final classes = pengajarCtrl.teachingClasses;
+        return Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: classes.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'Belum ada kelas yang Anda ajar',
+                        style: TextStyle(color: AppColors.secondaryText),
+                      ),
+                    )
+                  : GridView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                            crossAxisCount: 2,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            mainAxisExtent: 152,
+                          ),
+                      itemCount: classes.length,
+                      itemBuilder: (context, i) {
+                        final item = classes[i];
+                        return ClassCard(
+                          data: item,
+                          onTap: () => openPage(
+                            context,
+                            breadcrumb: ['Beranda', item.title],
+                            page: PengajarDetailScreen(
+                              controller: pengajarCtrl,
+                              classData: item,
+                            ),
+                            routeName: AppRoutes.pengajarDetail,
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   Widget _buildHeader() {
     final textTheme = Theme.of(context).textTheme;
     final title = _selectedTab == 0 ? 'Kelas Terdaftar' : 'Pengajar';
@@ -77,8 +139,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // Sesuai desain: tab yang SEDANG dibuka berwarna putih (Outlined),
-  // tab tujuan berwarna biru (Filled).
   Widget _buildTabButton(String label, int index) {
     final isCurrent = _selectedTab == index;
     void onPressed() => setState(() => _selectedTab = index);

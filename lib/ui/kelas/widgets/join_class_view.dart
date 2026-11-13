@@ -34,28 +34,29 @@ class _JoinClassViewState extends State<JoinClassView> {
     final code = _codeController.text.trim();
     final isFormatOk = RegExp(r'^[a-zA-Z0-9]{5,8}$').hasMatch(code);
     if (!isFormatOk) {
-      _showError();
+      _showError(
+        'Tidak dapat bergabung ke kelas ini. Periksa kode dan akun, lalu coba lagi.',
+      );
       return;
     }
 
     setState(() => _submitting = true);
-    final ok = await widget.controller.joinByCode(code);
+    final err = await widget.controller.joinByCode(code);
     if (!mounted) return;
     setState(() => _submitting = false);
 
-    if (ok) {
+    if (err == null) {
       widget.onJoined();
     } else {
-      _showError();
+      _showError(err);
     }
   }
 
-  void _showError() {
+  void _showError(String message) {
     showInfoDialog(
       context,
       title: 'Terjadi error',
-      message:
-          'Tidak dapat bergabung ke kelas ini. Periksa kode dan akun, lalu coba lagi.',
+      message: message,
     );
   }
 

@@ -1,6 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
-
+import 'package:path_mobile/data/api_helper.dart';
 import 'package:path_mobile/utils/http_client.dart';
 
 class RegisterRepository {
@@ -8,31 +8,27 @@ class RegisterRepository {
 
   RegisterRepository(this._client);
 
-  HttpClient get client => _client;
-
   /// Returns an error message on failure, or `null` on success.
   Future<String?> register({
     required String username,
     required String email,
     required String password,
   }) async {
-    final body = {
-      'username': username,
-      'email': email,
-      'password': password,
-    };
-
     try {
       final response = await _client
           .post(
             _client.uri('/register'),
-            body: jsonEncode(body),
-            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'username': username,
+              'email': email,
+              'password': password,
+            }),
+            headers: _client.json,
           )
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200 && response.statusCode != 201) {
-        return _client.extractError(response, 'Gagal mendaftarkan akun');
+        return parseApiError(response, 'Gagal mendaftarkan akun');
       }
 
       final data = jsonDecode(response.body) as Map<String, dynamic>;

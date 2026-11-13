@@ -54,7 +54,6 @@ class _CekJawabanScreenState extends State<CekJawabanScreen> {
   void initState() {
     super.initState();
     _ctrl.addListener(_syncScores);
-    _ctrl.fetchPengumpulan(widget.classData, widget.tugasId);
   }
 
   @override

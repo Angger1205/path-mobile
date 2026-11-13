@@ -6,7 +6,6 @@ import 'package:path_mobile/ui/core/page_frame.dart';
 import 'package:path_mobile/ui/kelas/kelas_controller.dart';
 import 'package:path_mobile/ui/kelas/materi_detail_screen.dart';
 import 'package:path_mobile/ui/kelas/widgets/materi_card.dart';
-import 'package:path_mobile/ui/kelas/widgets/members_tab.dart';
 import 'package:path_mobile/ui/kelas/widgets/tugas_tab.dart';
 
 class ClassDetailScreen extends StatefulWidget {
@@ -38,7 +37,7 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Column(
         children: [
           BackTitleRow(title: widget.classData.title),
@@ -59,7 +58,6 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
             tabs: const [
               Tab(text: 'Materi'),
               Tab(text: 'Tugas'),
-              Tab(text: 'Anggota'),
             ],
           ),
           Expanded(
@@ -74,7 +72,6 @@ class _ClassDetailScreenState extends State<ClassDetailScreen> {
                       controller: widget.controller,
                       breadcrumb: widget.breadcrumb,
                     ),
-                    MembersTab(controller: widget.controller),
                   ],
                 );
               },

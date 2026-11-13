@@ -39,23 +39,17 @@ class LayoutScreen extends StatelessWidget {
         destinations: AppAssets.navItems
             .map(
               (item) => NavigationDestination(
-                icon: _navIcon(item.inactive),
-                selectedIcon: _navIcon(item.active),
+                icon: Icon(item.icon, size: 26, color: AppColors.text),
+                selectedIcon: Icon(
+                  item.activeIcon,
+                  size: 26,
+                  color: AppColors.text,
+                ),
                 label: item.label,
               ),
             )
             .toList(),
       ),
-    );
-  }
-
-  Widget _navIcon(String path) {
-    return Image.asset(
-      path,
-      width: 26,
-      height: 26,
-      errorBuilder: (_, _, _) =>
-          const Icon(Icons.image_not_supported_outlined),
     );
   }
 }

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:path_mobile/data/kelas/kelas_model.dart';
 import 'package:path_mobile/data/pengajar/tugas_pengajar_model.dart';
-import 'package:path_mobile/ui/core/app_assets.dart';
 import 'package:path_mobile/ui/core/app_button_styles.dart';
 import 'package:path_mobile/ui/core/app_theme.dart';
-import 'package:path_mobile/ui/core/confirm_dialog.dart';
 import 'package:path_mobile/ui/core/page_frame.dart';
-import 'package:path_mobile/ui/core/png_icon.dart';
 import 'package:path_mobile/ui/kelas/widgets/post_card.dart';
 import 'package:path_mobile/ui/pengajar/pengajar_controller.dart';
 import 'package:path_mobile/ui/pengajar/pengajar_tugas_detail_screen.dart';
@@ -39,15 +36,6 @@ class PengajarTugasTab extends StatelessWidget {
     );
   }
 
-  Future<void> _delete(BuildContext context, TugasPengajarModel t) async {
-    final yes = await showConfirmDialog(
-      context,
-      title: 'Hapus Tugas',
-      message: 'Apakah anda yakin ingin menghapus tugas',
-    );
-    if (yes) controller.deleteTugas(classData, t.id);
-  }
-
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -64,10 +52,9 @@ class PengajarTugasTab extends StatelessWidget {
                 child: ElevatedButton.icon(
                   style: AppButtonStyles.softCompact,
                   onPressed: () => _openForm(context),
-                  icon: const PngIcon(
-                    AppAssets.iconTambah,
+                  icon: const Icon(
+                    Icons.add_box_outlined,
                     size: 18,
-                    fallback: Icons.add_box_outlined,
                   ),
                   label: const Text('Tambah Tugas'),
                 ),
@@ -101,15 +88,9 @@ class PengajarTugasTab extends StatelessWidget {
                               tugasId: t.id,
                             ),
                           ),
-                          menuLabels: const ['Edit', 'Hapus'],
-                          onMenuItemSelected: (index) {
-                            switch (index) {
-                              case 0:
-                                _openForm(context, existing: t);
-                              case 1:
-                                _delete(context, t);
-                            }
-                          },
+                          menuLabels: const ['Edit'],
+                          onMenuItemSelected: (_) =>
+                              _openForm(context, existing: t),
                         );
                       },
                     ),

@@ -34,29 +34,40 @@ import 'package:path_mobile/ui/profil/profil_screen.dart';
 final _httpClient = HttpClient();
 
 final _loginRepo = LoginRepository(_httpClient);
+final _registerRepo = RegisterRepository(_httpClient);
 final _profilRepo = ProfilRepository(_httpClient);
-final _pengajarRepo = PengajarRepository(_httpClient);
+final _pengajarRepo = PengajarRepository(
+  _httpClient,
+  currentUserId: () => _profilRepo.id,
+);
 final _kelasRepo = KelasRepository(
   _httpClient,
-  extraClassesProvider: () => _pengajarRepo.teachingClasses,
+  currentUserId: () => _profilRepo.id,
 );
 final _kalenderRepo = KalenderRepository(
   _httpClient,
   kelasRepo: _kelasRepo,
   pengajarRepo: _pengajarRepo,
 );
-final _registerRepo = RegisterRepository(_httpClient);
 
 final _kelasController = KelasController(_kelasRepo);
 final _pengajarController = PengajarController(_pengajarRepo);
 final _kalenderController = KalenderController(_kalenderRepo);
-final _profilController = ProfilController(_profilRepo);
+final _profilController = ProfilController(
+  _profilRepo,
+  onLogout: () {
+    _kelasRepo.clear();
+    _pengajarRepo.clear();
+    _kalenderRepo.clear();
+  },
+);
 
 Future<void> _loadInitialSessionData() async {
+  await _profilRepo.fetchProfile();
   await Future.wait([
-    _profilRepo.fetchProfile(),
     _kelasRepo.fetchJoinedClasses(),
     _pengajarRepo.fetchTeachingClasses(),
+    _kalenderRepo.fetchKalender(),
   ]);
 }
 
@@ -67,8 +78,10 @@ final router = GoRouter(
       routes: [
         GoRoute(
           path: '/beranda',
-          builder: (context, state) =>
-              DashboardScreen(controller: _kelasController),
+          builder: (context, state) => DashboardScreen(
+            controller: _kelasController,
+            pengajarController: _pengajarController,
+          ),
         ),
         GoRoute(
           path: '/pengajar',

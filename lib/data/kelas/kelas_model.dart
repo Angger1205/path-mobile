@@ -1,5 +1,3 @@
-import 'package:path_mobile/ui/core/app_assets.dart';
-
 class KelasModel {
   final int id;
   final String nama;
@@ -45,7 +43,7 @@ class KelasModel {
       title: nama,
       grade: 'Kelas $roman',
       teacher: teacher,
-      imagePath: AppAssets.covers[index % AppAssets.covers.length],
+      coverIndex: index,
       code: kodeKelas,
     );
   }
@@ -66,7 +64,8 @@ class ClassModel {
   final String title; // "Mapel 1"
   final String grade; // "Kelas X"
   final String? teacher; // boleh kosong (tab Pengajar tidak menampilkan guru)
-  final String? imagePath; // boleh kosong, nanti diisi path asset
+  final String? imagePath; // opsional
+  final int? coverIndex; // index tema sampul Material
   final String? code; // kode kelas dari backend
 
   const ClassModel({
@@ -75,6 +74,7 @@ class ClassModel {
     required this.grade,
     this.teacher,
     this.imagePath,
+    this.coverIndex,
     this.code,
   });
 

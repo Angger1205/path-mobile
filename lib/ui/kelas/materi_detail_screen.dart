@@ -4,7 +4,7 @@ import 'package:path_mobile/ui/core/app_theme.dart';
 import 'package:path_mobile/ui/core/page_frame.dart';
 import 'package:path_mobile/ui/kelas/kelas_controller.dart';
 import 'package:path_mobile/ui/kelas/widgets/ai_help_section.dart';
-import 'package:path_mobile/ui/kelas/widgets/file_card.dart';
+import 'package:path_mobile/ui/pengajar/widgets/lampiran_card.dart';
 import 'package:path_mobile/utils/date_format.dart';
 
 class MateriDetailScreen extends StatefulWidget {
@@ -27,6 +27,7 @@ class _MateriDetailScreenState extends State<MateriDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final materi = widget.materi;
+    final lampiran = materi.semuaLampiran;
     final meta =
         '${materi.author} • ${formatTanggal(materi.postedAt)} • ${formatJam(materi.postedAt)}';
 
@@ -52,12 +53,11 @@ class _MateriDetailScreenState extends State<MateriDetailScreen> {
                   style: const TextStyle(fontSize: 12, color: AppColors.text),
                 ),
                 const SizedBox(height: 16),
-                FileCard(
-                  fileName: materi.fileName,
-                  fileType: materi.fileType,
-                  onTap: () {},
-                ),
-                const SizedBox(height: 16),
+                for (final item in lampiran) ...[
+                  LampiranCard(data: item),
+                  const SizedBox(height: 10),
+                ],
+                const SizedBox(height: 6),
                 if (_showAi)
                   AiHelpSection(controller: widget.controller)
                 else

@@ -20,11 +20,12 @@ class BuatMateriAiScreen extends StatefulWidget {
 }
 
 class _BuatMateriAiScreenState extends State<BuatMateriAiScreen> {
+  static const _baseModes = ['Tabel', 'Diagram', 'Ilustrasi'];
   static const _modes = ['Tabel', 'Diagram', 'Ilustrasi', 'Kombinasi'];
 
   final _titleController = TextEditingController();
   final _promptController = TextEditingController();
-  String? _selectedMode;
+  final Set<String> _selectedModes = {};
   bool _isLoading = false;
 
   bool get _canCreate =>
@@ -39,14 +40,41 @@ class _BuatMateriAiScreenState extends State<BuatMateriAiScreen> {
     super.dispose();
   }
 
+  void _toggleMode(String label) {
+    setState(() {
+      if (label == 'Kombinasi') {
+        if (_selectedModes.contains('Kombinasi')) {
+          _selectedModes.clear();
+        } else {
+          _selectedModes.addAll(_modes);
+        }
+      } else {
+        if (_selectedModes.contains(label)) {
+          _selectedModes.remove(label);
+          _selectedModes.remove('Kombinasi');
+        } else {
+          _selectedModes.add(label);
+          if (_baseModes.every(_selectedModes.contains)) {
+            _selectedModes.add('Kombinasi');
+          }
+        }
+      }
+    });
+  }
+
   Future<void> _generate() async {
     FocusScope.of(context).unfocus();
     setState(() => _isLoading = true);
 
+    final activeModes = _selectedModes
+        .where((m) => m != 'Kombinasi')
+        .toList();
+    final modeText = activeModes.isEmpty ? null : activeModes.join(', ');
+
     final result = await widget.controller.generateAiMateri(
       title: _titleController.text.trim(),
       prompt: _promptController.text.trim(),
-      mode: _selectedMode,
+      mode: modeText,
     );
 
     if (!mounted) return;
@@ -154,10 +182,10 @@ class _BuatMateriAiScreenState extends State<BuatMateriAiScreen> {
   }
 
   Widget _buildChip(String label) {
-    final selected = _selectedMode == label;
+    final selected = _selectedModes.contains(label);
 
     return ElevatedButton(
-      onPressed: () => setState(() => _selectedMode = selected ? null : label),
+      onPressed: () => _toggleMode(label),
       style: ElevatedButton.styleFrom(
         backgroundColor: selected ? AppColors.color1 : AppColors.card,
         foregroundColor: selected ? Colors.white : AppColors.text,

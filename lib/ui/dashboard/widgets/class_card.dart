@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:path_mobile/data/kelas/kelas_model.dart';
+import 'package:path_mobile/ui/core/app_assets.dart';
 import 'package:path_mobile/ui/core/app_theme.dart';
 
 class ClassCard extends StatelessWidget {
@@ -36,7 +37,7 @@ class ClassCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Bagian gambar sampul
+            // Bagian sampul Material bergaya banner Google Classroom
             SizedBox(height: 70, width: double.infinity, child: _buildImage()),
             // Bagian teks + titik tiga
             Padding(
@@ -141,22 +142,42 @@ class ClassCard extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    final path = data.imagePath;
-    if (path == null) return _placeholder();
-    return Image.asset(
-      path,
-      fit: BoxFit.cover,
-      errorBuilder: (_, _, _) => _placeholder(),
+    final theme = AppAssets.getCoverTheme(
+      data.coverIndex ?? data.title.hashCode,
     );
-  }
-
-  Widget _placeholder() {
     return Container(
-      color: AppColors.color2.withValues(alpha: 0.25),
-      child: const Icon(
-        Icons.image_outlined,
-        size: 32,
-        color: AppColors.secondaryText,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [theme.color1, theme.color2],
+        ),
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -10,
+            bottom: -10,
+            child: Icon(
+              theme.icon,
+              size: 68,
+              color: Colors.white.withValues(alpha: 0.22),
+            ),
+          ),
+          Positioned(
+            left: 14,
+            top: 17,
+            child: CircleAvatar(
+              radius: 18,
+              backgroundColor: Colors.white.withValues(alpha: 0.22),
+              child: Icon(
+                theme.icon,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

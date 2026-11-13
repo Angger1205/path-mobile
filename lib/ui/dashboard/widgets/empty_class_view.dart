@@ -40,13 +40,19 @@ class EmptyClassView extends StatelessWidget {
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: Image.asset(
-                        AppAssets.emptyClass,
-                        height: 180,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
+                    Container(
+                      height: 160,
+                      width: double.infinity,
+                      decoration: BoxDecoration(
+                        color: AppColors.color1.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          AppAssets.emptyClassIcon,
+                          size: 72,
+                          color: AppColors.color1,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 16),

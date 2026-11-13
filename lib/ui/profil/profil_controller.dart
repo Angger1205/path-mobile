@@ -3,8 +3,9 @@ import 'package:path_mobile/data/profil/profil_repository.dart';
 
 class ProfilController extends ChangeNotifier {
   final ProfilRepository _repo;
+  final VoidCallback? onLogout;
 
-  ProfilController(this._repo) {
+  ProfilController(this._repo, {this.onLogout}) {
     _repo.addListener(notifyListeners);
   }
 
@@ -15,8 +16,8 @@ class ProfilController extends ChangeNotifier {
 
   Future<String?> fetchProfile() => _repo.fetchProfile();
 
-  Future<String?> update({required String name, Uint8List? photo}) =>
-      _repo.update(name: name, photo: photo);
+  Future<String?> updateProfilePicture(Uint8List photo) =>
+      _repo.updateProfilePicture(photo);
 
   Future<String?> updateEmail(String email) => _repo.updateEmail(email);
 
@@ -26,6 +27,11 @@ class ProfilController extends ChangeNotifier {
     required String oldPassword,
     required String newPassword,
   }) => _repo.resetPassword(oldPassword: oldPassword, newPassword: newPassword);
+
+  void logout() {
+    _repo.logout();
+    onLogout?.call();
+  }
 
   @override
   void dispose() {

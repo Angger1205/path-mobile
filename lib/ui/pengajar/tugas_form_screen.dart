@@ -97,6 +97,14 @@ class _TugasFormScreenState extends State<TugasFormScreen> {
       );
       final savedId = await widget.controller.addTugas(widget.classData, tugas);
       if (!mounted) return;
+      if (savedId == null) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            const SnackBar(content: Text('Gagal menambahkan tugas')),
+          );
+        return;
+      }
 
       replacePage(
         context,
@@ -108,7 +116,7 @@ class _TugasFormScreenState extends State<TugasFormScreen> {
         ),
       );
     } else {
-      await widget.controller.updateTugas(
+      final err = await widget.controller.updateTugas(
         widget.classData,
         existing.withEdits(
           title: title,
@@ -119,6 +127,12 @@ class _TugasFormScreenState extends State<TugasFormScreen> {
         ),
       );
       if (!mounted) return;
+      if (err != null) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(SnackBar(content: Text(err)));
+        return;
+      }
       Navigator.of(context).pop();
     }
   }

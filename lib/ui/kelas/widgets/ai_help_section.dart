@@ -12,6 +12,7 @@ class AiHelpSection extends StatefulWidget {
 }
 
 class _AiHelpSectionState extends State<AiHelpSection> {
+  static const _baseModes = ['Tabel', 'Diagram', 'Ilustrasi'];
   static const _modes = ['Tabel', 'Diagram', 'Ilustrasi', 'Kombinasi'];
   static const _labelStyle = TextStyle(
     fontSize: 11,
@@ -20,7 +21,7 @@ class _AiHelpSectionState extends State<AiHelpSection> {
   );
 
   final _textController = TextEditingController();
-  String? _selectedMode;
+  final Set<String> _selectedModes = {};
   String? _question;
   String? _answer;
   bool _isLoading = false;
@@ -29,6 +30,28 @@ class _AiHelpSectionState extends State<AiHelpSection> {
   void dispose() {
     _textController.dispose();
     super.dispose();
+  }
+
+  void _toggleMode(String label) {
+    setState(() {
+      if (label == 'Kombinasi') {
+        if (_selectedModes.contains('Kombinasi')) {
+          _selectedModes.clear();
+        } else {
+          _selectedModes.addAll(_modes);
+        }
+      } else {
+        if (_selectedModes.contains(label)) {
+          _selectedModes.remove(label);
+          _selectedModes.remove('Kombinasi');
+        } else {
+          _selectedModes.add(label);
+          if (_baseModes.every(_selectedModes.contains)) {
+            _selectedModes.add('Kombinasi');
+          }
+        }
+      }
+    });
   }
 
   Future<void> _send() async {
@@ -42,20 +65,16 @@ class _AiHelpSectionState extends State<AiHelpSection> {
       _isLoading = true;
     });
 
-    final answer = await widget.controller.askAi(question, _selectedMode);
+    final activeModes = _selectedModes
+        .where((m) => m != 'Kombinasi')
+        .toList();
+    final modeText = activeModes.isEmpty ? null : activeModes.join(', ');
+    final answer = await widget.controller.askAi(question, modeText);
 
     if (!mounted) return;
     setState(() {
       _answer = answer;
       _isLoading = false;
-    });
-  }
-
-  void _askAgain() {
-    setState(() {
-      _question = null;
-      _answer = null;
-      _textController.clear();
     });
   }
 
@@ -98,10 +117,10 @@ class _AiHelpSectionState extends State<AiHelpSection> {
   }
 
   Widget _buildChip(String label) {
-    final selected = _selectedMode == label;
+    final selected = _selectedModes.contains(label);
 
     return ElevatedButton(
-      onPressed: () => setState(() => _selectedMode = selected ? null : label),
+      onPressed: () => _toggleMode(label),
       style: ElevatedButton.styleFrom(
         backgroundColor: selected ? AppColors.color1 : AppColors.card,
         foregroundColor: selected ? Colors.white : AppColors.text,
@@ -153,7 +172,7 @@ class _AiHelpSectionState extends State<AiHelpSection> {
               ),
             ],
           )
-        else ...[
+        else
           Container(
             width: double.infinity,
             padding: const EdgeInsets.all(16),
@@ -173,9 +192,6 @@ class _AiHelpSectionState extends State<AiHelpSection> {
               ),
             ),
           ),
-          const SizedBox(height: 8),
-          TextButton(onPressed: _askAgain, child: const Text('Tanya lagi')),
-        ],
       ],
     );
   }

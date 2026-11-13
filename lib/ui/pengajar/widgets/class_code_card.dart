@@ -6,7 +6,6 @@ class ClassCodeCard extends StatelessWidget {
   final String className;
   final VoidCallback onCopyLink;
   final VoidCallback onCopyCode;
-  final VoidCallback onReset;
 
   const ClassCodeCard({
     super.key,
@@ -14,7 +13,6 @@ class ClassCodeCard extends StatelessWidget {
     required this.className,
     required this.onCopyLink,
     required this.onCopyCode,
-    required this.onReset,
   });
 
   @override
@@ -88,14 +86,11 @@ class ClassCodeCard extends StatelessWidget {
               onCopyLink();
             case 1:
               onCopyCode();
-            case 2:
-              onReset();
           }
         },
         itemBuilder: (context) => const [
           PopupMenuItem(value: 0, child: Text('Salin link undangan kelas')),
           PopupMenuItem(value: 1, child: Text('Menyalin kode kelas')),
-          PopupMenuItem(value: 2, child: Text('Reset kode kelas')),
         ],
       ),
     );

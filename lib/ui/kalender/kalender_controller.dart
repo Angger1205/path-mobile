@@ -14,9 +14,12 @@ class KalenderController extends ChangeNotifier {
     today = DateTime(now.year, now.month, now.day);
     shownMonth = DateTime(now.year, now.month);
     _refresh();
+    _repo.addListener(_refresh);
     _repo.kelasRepo?.addListener(_refresh);
     _repo.pengajarRepo?.addListener(_refresh);
   }
+
+  Future<void> fetchKalender() => _repo.fetchKalender();
 
   void _refresh() {
     days = _groupByDate(_repo.getAgenda());
@@ -26,7 +29,7 @@ class KalenderController extends ChangeNotifier {
   List<MapEntry<DateTime, List<AgendaModel>>> _groupByDate(
     List<AgendaModel> items,
   ) {
-    final limit = DateTime(today.year, today.month + 1, today.day);
+    final limit = DateTime(today.year, today.month + 3, today.day);
     final map = <DateTime, List<AgendaModel>>{};
 
     for (final item in items) {
@@ -47,6 +50,7 @@ class KalenderController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _repo.removeListener(_refresh);
     _repo.kelasRepo?.removeListener(_refresh);
     _repo.pengajarRepo?.removeListener(_refresh);
     super.dispose();

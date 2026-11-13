@@ -1,19 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:path_mobile/data/kelas/kelas_model.dart';
 import 'package:path_mobile/data/kelas/materi_model.dart';
-import 'package:path_mobile/ui/core/app_assets.dart';
 import 'package:path_mobile/ui/core/app_button_styles.dart';
 import 'package:path_mobile/ui/core/app_theme.dart';
-import 'package:path_mobile/ui/core/confirm_dialog.dart';
 import 'package:path_mobile/ui/core/page_frame.dart';
-import 'package:path_mobile/ui/core/png_icon.dart';
 import 'package:path_mobile/ui/kelas/widgets/materi_card.dart';
 import 'package:path_mobile/ui/pengajar/buat_materi_screen.dart';
 import 'package:path_mobile/ui/pengajar/pengajar_controller.dart';
 import 'package:path_mobile/ui/pengajar/pengajar_materi_detail_screen.dart';
 import 'package:path_mobile/ui/pengajar/widgets/class_code_card.dart';
 import 'package:path_mobile/ui/pengajar/widgets/edit_materi_dialog.dart';
-import 'package:path_mobile/ui/pengajar/widgets/pengajar_members_tab.dart';
 import 'package:path_mobile/ui/pengajar/widgets/pengajar_tugas_tab.dart';
 import 'package:path_mobile/utils/copy_helper.dart';
 
@@ -33,29 +29,12 @@ class PengajarDetailScreen extends StatefulWidget {
 
 class _PengajarDetailScreenState extends State<PengajarDetailScreen> {
   PengajarController get _ctrl => widget.controller;
-  late ClassModel _class = widget.classData;
+  ClassModel get _class => widget.classData;
 
   @override
   void initState() {
     super.initState();
     _ctrl.fetchClassContent(_class);
-  }
-
-  Future<void> _resetCode() async {
-    final yes = await showConfirmDialog(
-      context,
-      title: 'Reset Kode Kelas',
-      message:
-          'Kode dan link undangan yang lama tidak akan berlaku lagi. Lanjutkan?',
-    );
-    if (!yes || !mounted) return;
-
-    final updated = await _ctrl.resetCode(_class);
-    if (!mounted) return;
-    setState(() => _class = updated);
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(const SnackBar(content: Text('Kode kelas direset')));
   }
 
   Future<void> _editMateri(MateriModel m) async {
@@ -66,27 +45,23 @@ class _PengajarDetailScreenState extends State<PengajarDetailScreen> {
       description: m.description,
     );
     if (result == null) return;
-    _ctrl.updateMateri(
+    final err = await _ctrl.updateMateri(
       _class,
       m,
       title: result.title,
       description: result.description,
     );
-  }
-
-  Future<void> _deleteMateri(MateriModel m) async {
-    final yes = await showConfirmDialog(
-      context,
-      title: 'Hapus Materi',
-      message: 'Apakah anda yakin ingin menghapus materi',
-    );
-    if (yes) _ctrl.deleteMateri(_class, m);
+    if (err != null && mounted) {
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(SnackBar(content: Text(err)));
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return DefaultTabController(
-      length: 3,
+      length: 2,
       child: Column(
         children: [
           BackTitleRow(title: _class.title),
@@ -107,7 +82,6 @@ class _PengajarDetailScreenState extends State<PengajarDetailScreen> {
             tabs: const [
               Tab(text: 'Materi'),
               Tab(text: 'Tugas'),
-              Tab(text: 'Anggota'),
             ],
           ),
           Expanded(
@@ -115,7 +89,6 @@ class _PengajarDetailScreenState extends State<PengajarDetailScreen> {
               children: [
                 _buildMateriTab(),
                 PengajarTugasTab(controller: _ctrl, classData: _class),
-                PengajarMembersTab(controller: _ctrl, classData: _class),
               ],
             ),
           ),
@@ -149,7 +122,6 @@ class _PengajarDetailScreenState extends State<PengajarDetailScreen> {
                       text: _class.code ?? '',
                       message: 'Kode kelas disalin',
                     ),
-                    onReset: _resetCode,
                   ),
                   const SizedBox(width: 20),
                   ElevatedButton.icon(
@@ -162,11 +134,7 @@ class _PengajarDetailScreenState extends State<PengajarDetailScreen> {
                         classData: _class,
                       ),
                     ),
-                    icon: const PngIcon(
-                      AppAssets.iconTambah,
-                      size: 18,
-                      fallback: Icons.add_box_outlined,
-                    ),
+                    icon: const Icon(Icons.add_box_outlined, size: 18),
                     label: const Text('Buat Materi'),
                   ),
                 ],
@@ -193,15 +161,8 @@ class _PengajarDetailScreenState extends State<PengajarDetailScreen> {
                             breadcrumb: ['Pengajar', _class.title, m.title],
                             page: PengajarMateriDetailScreen(materi: m),
                           ),
-                          menuLabels: const ['Edit', 'Hapus'],
-                          onMenuItemSelected: (index) {
-                            switch (index) {
-                              case 0:
-                                _editMateri(m);
-                              case 1:
-                                _deleteMateri(m);
-                            }
-                          },
+                          menuLabels: const ['Edit'],
+                          onMenuItemSelected: (_) => _editMateri(m),
                         );
                       },
                     ),

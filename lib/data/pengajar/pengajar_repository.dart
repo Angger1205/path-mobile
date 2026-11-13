@@ -1,36 +1,29 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
-
+import 'package:path_mobile/data/api_helper.dart';
 import 'package:path_mobile/data/kelas/kelas_model.dart';
 import 'package:path_mobile/data/kelas/materi_model.dart';
 import 'package:path_mobile/data/pengajar/pengumpulan_model.dart';
 import 'package:path_mobile/data/pengajar/tugas_pengajar_model.dart';
-import 'package:path_mobile/ui/core/app_assets.dart';
 import 'package:path_mobile/utils/http_client.dart';
 
 class PengajarRepository extends ChangeNotifier {
   final HttpClient _client;
+  final int? Function()? currentUserId;
 
-  PengajarRepository(this._client);
+  PengajarRepository(this._client, {this.currentUserId});
 
-  HttpClient get client => _client;
-
-  // Kelas yang dibuat pengajar
   final List<ClassModel> _teaching = [];
-
   List<ClassModel> get teachingClasses => List.unmodifiable(_teaching);
 
-  // Materi per kelas: kode kelas -> daftar materinya
   final Map<String, List<MateriModel>> _materi = {};
-
   List<MateriModel> materiOf(ClassModel c) =>
-      List.unmodifiable(_materi[c.code] ?? []);
+      List.unmodifiable(_materi[c.code] ?? const []);
 
-  // Tugas per kelas: kode kelas -> daftar tugasnya
   final Map<String, List<TugasPengajarModel>> _tugas = {};
-
   List<TugasPengajarModel> tugasOf(ClassModel c) =>
-      List.unmodifiable(_tugas[c.code] ?? []);
+      List.unmodifiable(_tugas[c.code] ?? const []);
 
   List<TugasPengajarModel> get allTugas =>
       _tugas.values.expand((e) => e).toList();
@@ -42,41 +35,41 @@ class PengajarRepository extends ChangeNotifier {
     return null;
   }
 
-  // Pengumpulan per tugas: id tugas -> daftar siswanya
   final Map<String, List<PengumpulanModel>> _pengumpulan = {};
-
   List<PengumpulanModel> pengumpulanOf(String tugasId) =>
       List.unmodifiable(_pengumpulan[tugasId] ?? const []);
 
-  // Anggota per kelas: kode kelas -> daftar nama
-  final Map<String, List<String>> _teachers = {};
-  final Map<String, List<String>> _students = {};
+  void clear() {
+    _teaching.clear();
+    _materi.clear();
+    _tugas.clear();
+    _pengumpulan.clear();
+    notifyListeners();
+  }
 
-  List<String> _teacherList(ClassModel c) =>
-      _teachers.putIfAbsent(c.code ?? '', () => []);
-
-  List<String> _studentList(ClassModel c) =>
-      _students.putIfAbsent(c.code ?? '', () => []);
-
-  List<String> teachersOf(ClassModel c) => List.unmodifiable(_teacherList(c));
-  List<String> studentsOf(ClassModel c) => List.unmodifiable(_studentList(c));
-
-  /// Memuat daftar kelas yang diampu pengajar dari `GET /kelas?role=pengajar`.
+  /// Memuat daftar kelas yang diampu pengajar dari `GET /kelas` (`pengampu == myId`).
   Future<String?> fetchTeachingClasses() async {
     try {
       final response = await _client
-          .get(_client.uri('/kelas?role=pengajar'))
+          .get(_client.uri('/kelas'))
           .timeout(const Duration(seconds: 10));
 
       if (response.statusCode != 200) {
-        return _client.extractError(response, 'Gagal memuat kelas pengajar');
+        return parseApiError(response, 'Gagal memuat kelas pengajar');
       }
 
-      final data = jsonDecode(response.body) as List<dynamic>? ?? const [];
+      final decoded = jsonDecode(response.body);
+      final data = decoded is List ? decoded : const [];
+      final myId = currentUserId?.call();
+
       _teaching.clear();
-      for (var i = 0; i < data.length; i++) {
-        final km = KelasModel.fromJson(data[i] as Map<String, dynamic>);
-        _teaching.add(km.toClassModel(index: i));
+      var index = 0;
+      for (final item in data) {
+        if (item is! Map<String, dynamic>) continue;
+        final km = KelasModel.fromJson(item);
+        if (myId != null && km.pembuat == myId) {
+          _teaching.add(km.toClassModel(index: index++));
+        }
       }
       notifyListeners();
       return null;
@@ -85,7 +78,35 @@ class PengajarRepository extends ChangeNotifier {
     }
   }
 
-  /// Memuat materi, tugas, dan anggota kelas untuk kelas `c` dari backend.
+  /// Membuat kelas baru lewat `POST /kelas`.
+  Future<String?> createClass({
+    required String title,
+    required String grade,
+  }) async {
+    final tingkat = KelasModel.parseTingkat(grade);
+    try {
+      final res = await _client
+          .post(
+            _client.uri('/kelas'),
+            body: jsonEncode({
+              'nama': title,
+              'tingkat': tingkat,
+              'tahun_ajaran': '2026/2027',
+            }),
+            headers: _client.json,
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode != 200 && res.statusCode != 201) {
+        return parseApiError(res, 'Gagal membuat kelas');
+      }
+      await fetchTeachingClasses();
+      return null;
+    } catch (e) {
+      return 'Gagal membuat kelas: $e';
+    }
+  }
+
+  /// Memuat materi (`tipe=1`) dan tugas (`tipe=2`) untuk kelas `c`.
   Future<void> fetchClassContent(ClassModel c) async {
     final code = c.code;
     if (code == null || code.isEmpty) return;
@@ -94,62 +115,26 @@ class PengajarRepository extends ChangeNotifier {
       final results = await Future.wait([
         _client.get(_client.uri('/kelas/$code/posts?tipe=1')),
         _client.get(_client.uri('/kelas/$code/posts?tipe=2')),
-        _client.get(_client.uri('/kelas/$code/anggota')),
       ]);
 
       final materiRes = results[0];
       final tugasRes = results[1];
-      final anggotaRes = results[2];
-
-      String teacherName = 'Pengajar';
-
-      if (anggotaRes.statusCode == 200) {
-        final rawAnggota =
-            jsonDecode(anggotaRes.body) as List<dynamic>? ?? const [];
-        final tList = <String>[];
-        final sList = <String>[];
-        for (final item in rawAnggota) {
-          if (item is Map<String, dynamic>) {
-            final nama = item['nama'] as String? ?? '';
-            final isGuru = item['guru'] as bool? ?? false;
-            if (nama.isEmpty) continue;
-            if (isGuru) {
-              tList.add(nama);
-            } else {
-              sList.add(nama);
-            }
-          }
-        }
-        _teachers[code] = tList;
-        _students[code] = sList;
-        if (tList.isNotEmpty) {
-          teacherName = tList.first;
-        }
-      }
 
       if (materiRes.statusCode == 200) {
-        final rawMateri =
-            jsonDecode(materiRes.body) as List<dynamic>? ?? const [];
+        final decoded = jsonDecode(materiRes.body);
+        final rawMateri = decoded is List ? decoded : const [];
         _materi[code] = rawMateri
-            .map(
-              (e) => MateriModel.fromJson(
-                e as Map<String, dynamic>,
-                author: teacherName,
-              ),
-            )
+            .whereType<Map<String, dynamic>>()
+            .map((e) => MateriModel.fromJson(e))
             .toList();
       }
 
       if (tugasRes.statusCode == 200) {
-        final rawTugas =
-            jsonDecode(tugasRes.body) as List<dynamic>? ?? const [];
+        final decoded = jsonDecode(tugasRes.body);
+        final rawTugas = decoded is List ? decoded : const [];
         _tugas[code] = rawTugas
-            .map(
-              (e) => TugasPengajarModel.fromJson(
-                e as Map<String, dynamic>,
-                author: teacherName,
-              ),
-            )
+            .whereType<Map<String, dynamic>>()
+            .map((e) => TugasPengajarModel.fromJson(e))
             .toList();
       }
 
@@ -157,177 +142,154 @@ class PengajarRepository extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Memuat daftar pengumpulan tugas dari `GET /kelas/:kode/postingan/:id/kumpul`.
-  Future<void> fetchPengumpulan(ClassModel c, String tugasId) async {
+  Future<String?> addMateri(ClassModel c, MateriModel m) async {
     final code = c.code;
-    if (code == null || code.isEmpty) return;
+    if (code == null || code.isEmpty) return 'Kode kelas tidak ditemukan';
 
     try {
-      final res = await _client.get(
-        _client.uri('/kelas/$code/postingan/$tugasId/kumpul'),
-      );
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as List<dynamic>? ?? const [];
-        final submitted = data
-            .map((e) => PengumpulanModel.fromJson(e as Map<String, dynamic>))
-            .toList();
+      final lampiranPaths = await uploadPostinganFiles(_client, m.lampiran);
+      final res = await _client
+          .post(
+            _client.uri('/kelas/$code/posts'),
+            body: jsonEncode({
+              'judul': m.title,
+              'deskripsi': m.description,
+              'lampiran': lampiranPaths,
+              'tipe': 1,
+            }),
+            headers: _client.json,
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode != 200 && res.statusCode != 201) {
+        return parseApiError(res, 'Gagal menambahkan materi');
+      }
 
-        final submittedNames = submitted
-            .map((e) => e.studentName.toLowerCase())
-            .toSet();
-        final allStudents = _students[code] ?? const <String>[];
-        final assigned = <PengumpulanModel>[
-          for (final name in allStudents)
-            if (!submittedNames.contains(name.toLowerCase()))
-              PengumpulanModel(
-                studentName: name,
-                status: PengumpulanStatus.ditugaskan,
-              ),
-        ];
-
-        _pengumpulan[tugasId] = [...submitted, ...assigned];
+      final created = jsonDecode(res.body);
+      if (created is Map<String, dynamic>) {
+        _materi.putIfAbsent(code, () => []).insert(0, MateriModel.fromJson(created));
         notifyListeners();
       }
-    } catch (_) {}
+      return null;
+    } catch (e) {
+      return 'Gagal menambahkan materi: $e';
+    }
   }
 
-  Future<void> addMateri(ClassModel c, MateriModel m) async {
-    final code = c.code;
-    if (code == null || code.isEmpty) return;
-
-    _materi.putIfAbsent(code, () => []).insert(0, m);
-    notifyListeners();
-
-    try {
-      final lampiranPaths = await _client.uploadAttachments(m.lampiran);
-      final res = await _client.post(
-        _client.uri('/kelas/$code/posts'),
-        body: jsonEncode({
-          'judul': m.title,
-          'deskripsi': m.description,
-          'lampiran': lampiranPaths,
-          'tipe': 1,
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
-      if (res.statusCode == 201 || res.statusCode == 200) {
-        await fetchClassContent(c);
-      }
-    } catch (_) {}
-  }
-
-  Future<void> updateMateri(
+  Future<String?> updateMateri(
     ClassModel c,
     MateriModel old, {
     required String title,
     required String description,
   }) async {
     final code = c.code;
-    if (code == null || code.isEmpty) return;
-
-    final list = _materi[code];
-    final i = list?.indexOf(old) ?? -1;
-    if (i != -1) {
-      list![i] = old.copyWith(title: title, description: description);
-      notifyListeners();
+    if (code == null || code.isEmpty || old.id == null) {
+      return 'Materi tidak bisa diperbarui';
     }
 
-    if (old.id == null) return;
     try {
-      final lampiranPaths = await _client.uploadAttachments(old.lampiran);
-      await _client.patch(
-        _client.uri('/kelas/$code/postingan/${old.id}'),
-        body: jsonEncode({
-          'judul': title,
-          'deskripsi': description,
-          'lampiran': lampiranPaths,
-          'tipe': 1,
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
-    } catch (_) {}
+      final lampiranPaths = await uploadPostinganFiles(_client, old.lampiran);
+      final res = await _client
+          .patch(
+            _client.uri('/kelas/$code/postingan/${old.id}'),
+            body: jsonEncode({
+              'judul': title,
+              'deskripsi': description,
+              'lampiran': lampiranPaths,
+              'tipe': 1,
+            }),
+            headers: _client.json,
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode != 200) {
+        return parseApiError(res, 'Gagal memperbarui materi');
+      }
+
+      final updatedJson = jsonDecode(res.body);
+      final list = _materi[code];
+      final i = list?.indexWhere((m) => m.id == old.id) ?? -1;
+      if (i != -1 && updatedJson is Map<String, dynamic>) {
+        list![i] = MateriModel.fromJson(updatedJson);
+        notifyListeners();
+      }
+      return null;
+    } catch (e) {
+      return 'Gagal memperbarui materi: $e';
+    }
   }
 
-  Future<void> deleteMateri(ClassModel c, MateriModel m) async {
-    final code = c.code;
-    if (code == null || code.isEmpty) return;
-
-    _materi[code]?.remove(m);
-    notifyListeners();
-
-    if (m.id == null) return;
-    try {
-      await _client.delete(_client.uri('/kelas/$code/postingan/${m.id}'));
-    } catch (_) {}
-  }
-
-  Future<String> addTugas(ClassModel c, TugasPengajarModel t) async {
+  Future<String?> addTugas(ClassModel c, TugasPengajarModel t) async {
     final code = c.code;
     if (code == null || code.isEmpty) return t.id;
 
-    _tugas.putIfAbsent(code, () => []).insert(0, t);
-    notifyListeners();
-
     try {
-      final lampiranPaths = await _client.uploadAttachments(t.lampiran);
-      final res = await _client.post(
-        _client.uri('/kelas/$code/posts'),
-        body: jsonEncode({
-          'judul': t.title,
-          'deskripsi': t.description,
-          'lampiran': lampiranPaths,
-          'tipe': 2,
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
-      if (res.statusCode == 201 || res.statusCode == 200) {
-        await fetchClassContent(c);
-        final latest = _tugas[code];
-        if (latest != null && latest.isNotEmpty) {
-          return latest.first.id;
+      final lampiranPaths = await uploadPostinganFiles(_client, t.lampiran);
+      final res = await _client
+          .post(
+            _client.uri('/kelas/$code/posts'),
+            body: jsonEncode({
+              'judul': t.title,
+              'deskripsi': t.description,
+              'lampiran': lampiranPaths,
+              'tipe': 2,
+            }),
+            headers: _client.json,
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode == 200 || res.statusCode == 201) {
+        final created = jsonDecode(res.body);
+        if (created is Map<String, dynamic>) {
+          final model = TugasPengajarModel.fromJson(created);
+          _tugas.putIfAbsent(code, () => []).insert(0, model);
+          notifyListeners();
+          return model.id;
         }
       }
     } catch (_) {}
-    return t.id;
+    return null;
   }
 
-  Future<void> updateTugas(ClassModel c, TugasPengajarModel updated) async {
+  Future<String?> updateTugas(ClassModel c, TugasPengajarModel updated) async {
     final code = c.code;
-    if (code == null || code.isEmpty) return;
-
-    final list = _tugas[code];
-    final i = list?.indexWhere((t) => t.id == updated.id) ?? -1;
-    if (i != -1) {
-      list![i] = updated;
-      notifyListeners();
-    }
+    if (code == null || code.isEmpty) return 'Kode kelas tidak ditemukan';
 
     try {
-      final lampiranPaths = await _client.uploadAttachments(updated.lampiran);
-      await _client.patch(
-        _client.uri('/kelas/$code/postingan/${updated.id}'),
-        body: jsonEncode({
-          'judul': updated.title,
-          'deskripsi': updated.description,
-          'lampiran': lampiranPaths,
-          'tipe': 2,
-        }),
-        headers: {'Content-Type': 'application/json'},
+      final lampiranPaths = await uploadPostinganFiles(
+        _client,
+        updated.lampiran,
       );
-    } catch (_) {}
-  }
+      final res = await _client
+          .patch(
+            _client.uri('/kelas/$code/postingan/${updated.id}'),
+            body: jsonEncode({
+              'judul': updated.title,
+              'deskripsi': updated.description,
+              'lampiran': lampiranPaths,
+              'tipe': 2,
+            }),
+            headers: _client.json,
+          )
+          .timeout(const Duration(seconds: 10));
+      if (res.statusCode != 200) {
+        return parseApiError(res, 'Gagal memperbarui tugas');
+      }
 
-  Future<void> deleteTugas(ClassModel c, String id) async {
-    final code = c.code;
-    if (code == null || code.isEmpty) return;
-
-    _tugas[code]?.removeWhere((t) => t.id == id);
-    _pengumpulan.remove(id);
-    notifyListeners();
-
-    try {
-      await _client.delete(_client.uri('/kelas/$code/postingan/$id'));
-    } catch (_) {}
+      final updatedJson = jsonDecode(res.body);
+      final list = _tugas[code];
+      final i = list?.indexWhere((t) => t.id == updated.id) ?? -1;
+      if (i != -1 && updatedJson is Map<String, dynamic>) {
+        list![i] = TugasPengajarModel.fromJson(updatedJson).withEdits(
+          title: updated.title,
+          description: updated.description,
+          dueDate: updated.dueDate,
+          acceptSubmissions: updated.acceptSubmissions,
+          lampiran: list[i].lampiran,
+        );
+        notifyListeners();
+      }
+      return null;
+    } catch (e) {
+      return 'Gagal memperbarui tugas: $e';
+    }
   }
 
   void saveScores(String tugasId, Map<String, int> scores) {
@@ -341,27 +303,6 @@ class PengajarRepository extends ChangeNotifier {
         status: PengumpulanStatus.dinilai,
       );
     }
-    notifyListeners();
-  }
-
-  bool addTeacher(ClassModel c, String name) => _addName(_teacherList(c), name);
-  bool addStudent(ClassModel c, String name) => _addName(_studentList(c), name);
-
-  bool _addName(List<String> list, String name) {
-    final exists = list.any((n) => n.toLowerCase() == name.toLowerCase());
-    if (exists) return false;
-    list.add(name);
-    notifyListeners();
-    return true;
-  }
-
-  void removeTeacher(ClassModel c, String name) {
-    _teacherList(c).remove(name);
-    notifyListeners();
-  }
-
-  void removeStudent(ClassModel c, String name) {
-    _studentList(c).remove(name);
     notifyListeners();
   }
 
@@ -380,124 +321,12 @@ class PengajarRepository extends ChangeNotifier {
     );
   }
 
-  Future<ClassModel> resetCode(ClassModel old) async {
-    final code = old.code;
-    if (code == null || code.isEmpty) return old;
-
-    try {
-      final res = await _client.post(_client.uri('/kelas/$code/reset-kode'));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as Map<String, dynamic>;
-        final newCode = data['kode_kelas'] as String? ?? code;
-        final updated = ClassModel(
-          id: old.id,
-          title: old.title,
-          grade: old.grade,
-          imagePath: old.imagePath,
-          code: newCode,
-        );
-
-        final i = _teaching.indexWhere((x) => x.code == code);
-        if (i != -1) _teaching[i] = updated;
-
-        final materiList = _materi.remove(code);
-        if (materiList != null) _materi[newCode] = materiList;
-
-        final tugasList = _tugas.remove(code);
-        if (tugasList != null) _tugas[newCode] = tugasList;
-
-        final teacherList = _teachers.remove(code);
-        if (teacherList != null) _teachers[newCode] = teacherList;
-
-        final studentList = _students.remove(code);
-        if (studentList != null) _students[newCode] = studentList;
-
-        notifyListeners();
-        return updated;
-      }
-    } catch (_) {}
-    return old;
-  }
-
-  Future<void> deleteClass(ClassModel target) async {
-    final code = target.code;
-    _teaching.removeWhere((c) => c.code == code || c == target);
-    _materi.remove(code);
-    for (final t in _tugas[code] ?? const <TugasPengajarModel>[]) {
-      _pengumpulan.remove(t.id);
-    }
-    _tugas.remove(code);
-    _teachers.remove(code);
-    _students.remove(code);
-    notifyListeners();
-
-    if (code == null || code.isEmpty) return;
-    try {
-      await _client.delete(_client.uri('/kelas/$code'));
-    } catch (_) {}
-  }
-
-  Future<void> createClass({
-    required String title,
-    required String grade,
-  }) async {
-    final tingkat = KelasModel.parseTingkat(grade);
-    try {
-      final res = await _client.post(
-        _client.uri('/kelas'),
-        body: jsonEncode({
-          'nama': title,
-          'tingkat': tingkat,
-          'tahun_ajaran': '2026/2027',
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
-      if (res.statusCode == 201 || res.statusCode == 200) {
-        await fetchTeachingClasses();
-      }
-    } catch (_) {}
-  }
-
-  Future<void> updateClass(
-    ClassModel old, {
-    required String title,
-    required String grade,
-  }) async {
-    final code = old.code;
-    final i = _teaching.indexWhere((c) => c.code == code || c == old);
-    if (i != -1) {
-      _teaching[i] = ClassModel(
-        id: old.id,
-        title: title,
-        grade: grade,
-        imagePath:
-            old.imagePath ?? AppAssets.covers[i % AppAssets.covers.length],
-        code: code,
-      );
-      notifyListeners();
-    }
-
-    if (code == null || code.isEmpty) return;
-    try {
-      await _client.patch(
-        _client.uri('/kelas/$code'),
-        body: jsonEncode({
-          'nama': title,
-          'tingkat': KelasModel.parseTingkat(grade),
-          'tahun_ajaran': '2026/2027',
-        }),
-        headers: {'Content-Type': 'application/json'},
-      );
-    } catch (_) {}
-  }
-
   Future<MateriModel> generateAiMateri({
     required String title,
     required String prompt,
     String? mode,
   }) async {
     await Future.delayed(const Duration(milliseconds: 800));
-
     return MateriModel(
       title: title,
       author: 'Pengajar',

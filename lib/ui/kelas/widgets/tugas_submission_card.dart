@@ -7,6 +7,7 @@ import 'package:path_mobile/ui/core/app_theme.dart';
 import 'package:path_mobile/ui/kelas/kelas_controller.dart';
 import 'package:path_mobile/ui/kelas/widgets/add_link_dialog.dart';
 import 'package:path_mobile/ui/kelas/widgets/file_card.dart';
+import 'package:path_mobile/utils/link_helper.dart';
 
 /// Kartu "Tugas" di halaman detail tugas: status, lampiran, dan tombol-tombol.
 class TugasSubmissionCard extends StatefulWidget {
@@ -111,8 +112,12 @@ class _TugasSubmissionCardState extends State<TugasSubmissionCard> {
               ],
             ),
             const SizedBox(height: 12),
-            for (final item in _tugas.lampiran) ...[
-              _buildAttachment(item),
+            for (var i = 0; i < _tugas.lampiran.length; i++) ...[
+              _buildAttachment(
+                _tugas.lampiran[i],
+                onRemove: () =>
+                    widget.controller.removeTugasAttachment(_tugas.id, i),
+              ),
               const SizedBox(height: 10),
             ],
             if (_composing)
@@ -183,6 +188,7 @@ class _TugasSubmissionCardState extends State<TugasSubmissionCard> {
       icon: item.type == LampiranType.link
           ? Icons.link
           : Icons.description_outlined,
+      onTap: () => openAttachment(context, item),
     );
 
     if (onRemove == null) return card;
@@ -191,6 +197,7 @@ class _TugasSubmissionCardState extends State<TugasSubmissionCard> {
       children: [
         Expanded(child: card),
         IconButton(
+          tooltip: 'Hapus lampiran',
           onPressed: onRemove,
           icon: const Icon(Icons.close, color: AppColors.text),
         ),

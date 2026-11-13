@@ -5,11 +5,22 @@ import 'package:path_mobile/ui/profil/bantuan_screen.dart';
 
 class ProfilHeader extends StatelessWidget {
   final bool showBack;
+  final VoidCallback? onLogout;
 
-  const ProfilHeader({super.key, this.showBack = false});
+  const ProfilHeader({super.key, this.showBack = false, this.onLogout});
 
   @override
   Widget build(BuildContext context) {
+    final buttonStyle = ElevatedButton.styleFrom(
+      backgroundColor: AppColors.card,
+      foregroundColor: AppColors.text,
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      minimumSize: const Size(0, 32),
+      textStyle: const TextStyle(fontSize: 11),
+    );
+
     return Padding(
       padding: EdgeInsets.fromLTRB(showBack ? 4 : 16, 8, 16, 8),
       child: Row(
@@ -35,19 +46,17 @@ class ProfilHeader extends StatelessWidget {
               breadcrumb: ['Profil', 'Bantuan'],
               page: const BantuanScreen(),
             ),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.card,
-              foregroundColor: AppColors.text,
-              elevation: 3,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              minimumSize: const Size(0, 32),
-              textStyle: const TextStyle(fontSize: 11),
-            ),
+            style: buttonStyle,
             child: const Text('Bantuan'),
           ),
+          if (onLogout != null) ...[
+            const SizedBox(width: 8),
+            ElevatedButton(
+              onPressed: onLogout,
+              style: buttonStyle,
+              child: const Text('Keluar'),
+            ),
+          ],
         ],
       ),
     );

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:path_mobile/data/kelas/kelas_model.dart';
-import 'package:path_mobile/ui/core/app_assets.dart';
 import 'package:path_mobile/ui/core/app_button_styles.dart';
 import 'package:path_mobile/ui/core/app_theme.dart';
-import 'package:path_mobile/ui/core/png_icon.dart';
 import 'package:path_mobile/ui/dashboard/widgets/class_card.dart';
 
 class TeachingClassesView extends StatelessWidget {
@@ -11,8 +9,6 @@ class TeachingClassesView extends StatelessWidget {
   final VoidCallback onCreate;
   final void Function(ClassModel) onOpen;
   final void Function(ClassModel) onCopyLink;
-  final void Function(ClassModel) onEdit;
-  final void Function(ClassModel) onDelete;
 
   const TeachingClassesView({
     super.key,
@@ -20,8 +16,6 @@ class TeachingClassesView extends StatelessWidget {
     required this.onCreate,
     required this.onOpen,
     required this.onCopyLink,
-    required this.onEdit,
-    required this.onDelete,
   });
 
   @override
@@ -45,11 +39,7 @@ class TeachingClassesView extends StatelessWidget {
               ElevatedButton.icon(
                 style: AppButtonStyles.softCompact,
                 onPressed: onCreate,
-                icon: const PngIcon(
-                  AppAssets.iconTambah,
-                  size: 18,
-                  fallback: Icons.add_box_outlined,
-                ),
+                icon: const Icon(Icons.add_box_outlined, size: 18),
                 label: const Text('Buat Kelas'),
               ),
             ],
@@ -70,21 +60,8 @@ class TeachingClassesView extends StatelessWidget {
               return ClassCard(
                 data: item,
                 onTap: () => onOpen(item),
-                menuLabels: const [
-                  'Salin link undangan kelas',
-                  'Edit Kelas',
-                  'Hapus Kelas',
-                ],
-                onMenuItemSelected: (index) {
-                  switch (index) {
-                    case 0:
-                      onCopyLink(item);
-                    case 1:
-                      onEdit(item);
-                    case 2:
-                      onDelete(item);
-                  }
-                },
+                menuLabel: 'Salin link undangan kelas',
+                onMenuSelected: () => onCopyLink(item),
               );
             },
           ),
