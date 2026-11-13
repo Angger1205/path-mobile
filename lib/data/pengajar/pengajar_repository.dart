@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 
 import 'package:path_mobile/data/kelas/kelas_model.dart';
-import 'package:path_mobile/data/kelas/lampiran_model.dart';
 import 'package:path_mobile/data/kelas/materi_model.dart';
 import 'package:path_mobile/data/pengajar/pengumpulan_model.dart';
 import 'package:path_mobile/data/pengajar/tugas_pengajar_model.dart';
