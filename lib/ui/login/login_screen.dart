@@ -50,7 +50,7 @@ class _LoginScreenState extends State<LoginScreen> {
             color: theme.cardColor,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(64)),
             border: const Border.symmetric(
-              horizontal: BorderSide(color: AppColors.secondaryText, width: 2),
+              horizontal: BorderSide(color: AppColors.secondaryText, width: 1),
             ),
           ),
           padding: const EdgeInsets.symmetric(horizontal: 50),
@@ -144,9 +144,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                       ElevatedButton(
                         onPressed: ctrl.isLoading ? null : _handleLogin,
-                        style: ElevatedButton.styleFrom(
-                          padding: const EdgeInsets.all(20),
-                        ),
                         child: ctrl.isLoading
                             ? SizedBox(
                                 height: 20,

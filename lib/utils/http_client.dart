@@ -1,7 +1,7 @@
 import 'package:http/http.dart' as http;
 
 class HttpClient extends http.BaseClient {
-  final String baseUrl = 'http://localhost:3000';
+  final String baseUrl = 'https://api.pathclass.app';
   final http.Client _inner;
   String? _token;
 

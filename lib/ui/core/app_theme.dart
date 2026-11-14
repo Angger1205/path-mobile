@@ -151,9 +151,45 @@ abstract final class AppTheme {
           foregroundColor: Colors.white,
         ),
       ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.color1,
+          foregroundColor: Colors.white,
+          disabledBackgroundColor: AppColors.color2.withValues(alpha: 0.6),
+          disabledForegroundColor: Colors.white,
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: AppColors.color1,
+          side: BorderSide(
+            color: AppColors.secondaryText.withValues(alpha: 0.4),
+          ),
+        ),
+      ),
       extensions: const <ThemeExtension<dynamic>>[
         AppCustomColors.light,
       ],
     );
   }
+
+  static final ButtonStyle softButton = ElevatedButton.styleFrom(
+    backgroundColor: AppColors.card,
+    foregroundColor: AppColors.text,
+    disabledBackgroundColor: AppColors.background,
+    disabledForegroundColor: AppColors.secondaryText.withValues(alpha: 0.5),
+    elevation: 3,
+    shape: const StadiumBorder(),
+    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+  );
+
+  static final ButtonStyle softCompactButton = ElevatedButton.styleFrom(
+    backgroundColor: AppColors.card,
+    foregroundColor: AppColors.text,
+    disabledBackgroundColor: AppColors.background,
+    disabledForegroundColor: AppColors.secondaryText.withValues(alpha: 0.5),
+    elevation: 3,
+    shape: const StadiumBorder(),
+    padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+  );
 }

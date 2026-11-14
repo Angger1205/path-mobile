@@ -21,7 +21,6 @@ class AuthScreen extends StatelessWidget {
             children: [
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  padding: EdgeInsets.all(20),
                   backgroundColor: Colors.blue,
                   foregroundColor: Colors.white,
                 ),
@@ -30,7 +29,6 @@ class AuthScreen extends StatelessWidget {
               ),
               OutlinedButton(
                 style: OutlinedButton.styleFrom(
-                  padding: EdgeInsets.all(20),
                   foregroundColor: Colors.blue,
                   side: const BorderSide(color: Colors.blue),
                 ),
